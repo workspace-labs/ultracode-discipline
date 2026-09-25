@@ -12,6 +12,11 @@ Applies when UltraCode is on, the ask says ultracode, a Workflow call is coming,
 Quiet on a single lookup agent, a conversational turn, a trivial edit, a board stage move.
 It governs behaviour only. The Workflow engine, its opt-in rule and its hard limits stay exactly as the tool says.
 
+## The loaded line
+The first output after this skill loads, before any further text or tool call, is exactly one line:
+`ultracode-discipline: loaded · trigger: <keyword | session flag | workflow ask | multi-agent task>`
+Once per session. It tells the human the skill is governing the run.
+
 ## The workflow: SCOUT → DECOMPOSE → CONTRACT → BRIEF → RUN → VERIFY → PATCH → PROVE
 1. SCOUT — gather the facts every agent needs, once: inline or with one read-only agent.
 2. DECOMPOSE — list the owned deliverables, each with its write-set.

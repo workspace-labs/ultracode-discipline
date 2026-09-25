@@ -70,6 +70,8 @@ The skill's eight rules, in short:
 
 It loads on its own when UltraCode is on, when the prompt says `ultracode`, when a Workflow call is about to be made, or when one task needs more than one agent, including asks to fan out, orchestrate, parallelize or delegate. It stays quiet for a single lookup agent, a conversation, a trivial edit or a board stage move. Every agent decides for itself when a skill applies, so it can miss one; `/ultracode-discipline` loads it by hand.
 
+You can see it working: the first line Claude prints after the skill loads is `ultracode-discipline: loaded · trigger: …`, naming which trigger fired.
+
 **Claude Code only.** It relies on Claude Code capabilities, the Agent and Workflow tools where they are available, and on the built-in `workflow-authoring` reference for the script mechanics. An agent without those tools stops reading at the skill's first line. Other Claude environments do not necessarily expose the same tools.
 
 ---
@@ -139,8 +141,9 @@ The accepted version passed:
 - Claude-only isolation checks: an install in Claude's skills folder is not mirrored into other agents' skill folders;
 - a behavioral run on a throwaway project: one launch line, every return in the schema, a deliberately wrong brief surfaced as `blocked` rather than improvised, a narrow appended correction with the unchanged work replayed from cache instead of re-run, one final real test run, and no agent writing outside its write-set;
 - an independent review with no material findings remaining open.
+- trigger validation on Linux (2026-09-25): loads first for an `ultracode` prompt, for a "use a workflow" ask and for a session with ultracode on; stays quiet for a typo fix.
 
-Validated on macOS with Claude Code. Not validated on Windows or Linux.
+Validated on macOS and Linux (Ubuntu, Claude Code 2.1.282) with Claude Code. Not validated on Windows.
 
 ---
 
@@ -159,6 +162,18 @@ Validated on macOS with Claude Code. Not validated on Windows or Linux.
 ## The shortest version
 
 > Scout once. Give every agent one deliverable, one write-set, one definition of done. Fix the contracts first. Take nothing without evidence. Have a different agent check it. Correct narrowly. Prove it once, for real.
+
+## Reminder: update every machine
+
+The installed copy in `~/.claude/skills/` does not update itself. After a change lands in this repository, update the skill on **each** machine that runs Claude Code, including the Mac:
+
+```bash
+npx skills add workspace-labs/ultracode-discipline -g
+```
+
+If the skill is linked from a clone, run `git pull` in that clone instead. Then open a fresh Claude Code session; skills are indexed at session start.
+
+Quick check that the installed copy is current: start a session with an `ultracode` prompt. The first line Claude prints should be `ultracode-discipline: loaded · trigger: keyword`. No line means the old copy is still installed.
 
 ---
 
