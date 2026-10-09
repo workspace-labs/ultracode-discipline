@@ -4,73 +4,32 @@
 
 **Disciplined multi-agent execution for Claude UltraCode.**
 
-UltraCode lets Claude Code put many agents on one task. This skill is the small governance layer that keeps the main agent in charge of the run: it splits the work into owned deliverables, fixes the contracts before any agent starts, takes no result without evidence, has every claim checked by an agent that did not do the work, and corrects narrowly instead of starting over. It changes how Claude leads. It does not replace UltraCode or the Workflow engine.
+UltraCode lets Claude Code put many agents on one task. This skill is the small governance layer that keeps the main agent in charge of the run: one agent owns one deliverable and one write-set, the contracts are fixed before any agent starts, every write is checked by an agent that did not do it, a wrong brief stops instead of improvising, and a failed check is corrected by appending, never by restarting. It changes how Claude leads. It does not replace UltraCode or the Workflow engine, and it never restates what Claude Code's built-in `workflow-authoring` reference already says.
 
 The skill is one file — [`skills/ultracode-discipline/SKILL.md`](skills/ultracode-discipline/SKILL.md). **Claude Code only.**
 
 ---
 
-## What it does
+## The six rules
 
-A fan-out is only as disciplined as the prompt that started it. With this skill loaded, the main agent leads every run the same way:
+The built-in `workflow-authoring` reference already covers the script mechanics: schemas, pipeline vs barrier, resume, the journal, the token budget and the quality patterns. This skill adds only what that reference does not say:
 
-- it scouts once and gives every agent the same facts;
-- it splits the task into owned deliverables, each with its own write-set and its own definition of done;
-- it fixes interfaces, names and shapes before any agent starts, and no agent may change them;
-- every agent returns a structured result with evidence, and a missing result is reported as a failure, never dropped;
-- every claim is checked by an agent that did not do the work;
-- a failed check gets a narrow, bounded correction, not a new run;
-- the leader runs the project's real test, build or check once at the end.
+1. **One agent = one deliverable + one write-set.** Writers never overlap; readers may. Two agents work the same deliverable only when comparing them is the stated purpose. A task with one write-set gets no fan-out at all.
+2. **Contracts before fan-out.** The leader fixes interfaces, names and shapes first. No agent changes one; an agent that finds one wrong returns `blocked`.
+3. **Checker ≠ doer.** Every *write* deliverable is verified by an agent that did not build it. Read-only deliverables get no verifier. Audits use the reference's adversarial-verify pattern instead.
+4. **Blocked means stop.** A wrong or incomplete brief comes back as `blocked` with a reason, never improvised past. A missing result is a failure, never a silence.
+5. **Correct by appending.** At most two in-run correction rounds, each appended and re-verified. Never retry an unchanged brief, never relaunch a run for one failure. The leader runs the project's real test or build once at the end.
+6. **Declare the launch; a refusal is a no.** The workflow's own description — the line the approval dialog shows you before anything runs — is the launch line: `UltraCode: <n> agents · <phases> · why: …`. A fan-out through direct agent calls writes the same line as text first; a task with one write-set gets `UltraCode: 0 agents · one write-set — inline` and no fan-out. If you decline the Workflow dialog, that fan-out is over: Claude never re-runs the same agents through the Agent tool; it asks, or does the work inline and says so.
 
----
-
-## The workflow
-
-`SCOUT → DECOMPOSE → CONTRACT → BRIEF → RUN → VERIFY → PATCH → PROVE`
-
-| Step | What the main agent does |
-|---|---|
-| **SCOUT** | Gathers the facts every agent needs, once: inline or with one read-only agent. |
-| **DECOMPOSE** | Lists the owned deliverables, each with its write-set. |
-| **CONTRACT** | Fixes the interfaces, names and shapes before anyone starts. |
-| **BRIEF** | Writes every prompt complete, with its schema and its verifier stage. |
-| **RUN** | Launches, then continues without polling. |
-| **VERIFY** | Checks every claim in the run, per deliverable, and surfaces every missing result. |
-| **PATCH** | Corrects narrowly, appended, bounded. |
-| **PROVE** | Runs the real project command once and reports with evidence. |
-
-Verification and correction happen inside the run, per deliverable. The leader's own review and patch happen between runs: several small workflows in sequence, with the leader reading results between them, never one giant run.
-
----
-
-## The core principle
-
-`ONE AGENT = ONE OWNED DELIVERABLE + ONE WRITE-SET + ONE DEFINITION OF DONE`
-
-Readers may overlap. Writers never do: two agents run in parallel only on disjoint write-sets. Two agents work the same deliverable only when comparing them is the stated purpose.
-
----
-
-## Key behavior
-
-The skill's eight rules, in short:
-
-1. **Scout once, share once.** Every brief carries the same digest and the same contracts.
-2. **One agent, one owned deliverable.** One write-set, one definition of done, its own evidence.
-3. **Contracts before fan-out.** The leader fixes them. An agent that finds one wrong returns `blocked`; it never improvises.
-4. **The brief is complete and bounded.** Every field of the template is present, the rulebook is never pasted in, and every brief ends with the same line: do the brief yourself, never spawn agents.
-5. **Structured returns with evidence.** Every agent returns `done`, `blocked` or `unresolved` in a fixed schema. `done` means success with evidence attached. A missing or empty result is a failure, never a silence.
-6. **Verify independently, prove deterministically.** The checker is never the doer and sees the claim plus the code. The leader runs the real project check once, at the end.
-7. **Patch narrowly, bounded.** A checker's `unresolved` gets at most two in-run correction rounds, each appended and each re-checked by the independent verifier; after that the leader decides. Never retry an unchanged brief. Never restart a successful run for one failure.
-8. **Depth one, declared, not gated.** Only the leader spawns. The agent count comes from the real decomposition, and the launch line says the count, the phases, the reason and the estimated cost: information, not a request. Platform and harness limits still apply.
+Every brief carries the same shape (goal, contract, write-set, done-when, evidence, out of scope, blocked, return-only-the-schema, "do the brief yourself; never spawn agents") and every agent returns the same schema (`done` | `blocked` | `unresolved`, with evidence; a checker's failures in `findings`).
 
 ---
 
 ## Automatic use
 
-It loads on its own when UltraCode is on, when the prompt says `ultracode`, when a Workflow call is about to be made, or when one task needs more than one agent, including asks to fan out, orchestrate, parallelize or delegate. It stays quiet for a single lookup agent, a conversation, a trivial edit or a board stage move. Every agent decides for itself when a skill applies, so it can miss one; `/ultracode-discipline` loads it by hand.
+It loads on its own only when UltraCode is on or the prompt says `ultracode`. It stays quiet for an ordinary agent spawn, a parallel read-only lookup, a workflow you asked for without the word, a conversation, a trivial edit or a board stage move. Every agent decides for itself when a skill applies, so it can miss one; `/ultracode-discipline` loads it by hand.
 
-You can see it working: the first line Claude prints after the skill loads is `ultracode-discipline: loaded · trigger: …`, naming which trigger fired.
+You can see it working: the Workflow approval dialog's description is the launch line, `UltraCode: <n> agents · <phases> · why: …`, so you read the count and the reason at the moment you approve or decline.
 
 **Claude Code only.** It relies on Claude Code capabilities, the Agent and Workflow tools where they are available, and on the built-in `workflow-authoring` reference for the script mechanics. An agent without those tools stops reading at the skill's first line. Other Claude environments do not necessarily expose the same tools.
 
@@ -112,11 +71,11 @@ Ask for the run the way you normally would. If the request qualifies, the skill 
 
 > ultracode: split the import module into a parser, a validator and a writer, each with its own tests, and make `npm test` pass.
 
-The main agent scouts once, lists three owned deliverables with disjoint write-sets, fixes the three interfaces, briefs three builders and three checkers, prints one launch line, runs, corrects narrowly if a check fails, then runs `npm test` once and reports with evidence.
+The main agent lists three owned deliverables with disjoint write-sets, fixes the three interfaces, briefs three builders and three checkers, and hands you the approval dialog whose description is the launch line; after your approval it runs, corrects by appending if a check fails, then runs `npm test` once and reports with evidence.
 
-The launch line is printed once, before the first agent starts:
+`UltraCode: 6 agents · BUILD 3, VERIFY 3 · why: three modules with disjoint write-sets, each independently verified`
 
-`UltraCode: 6 agents · BUILD 3, VERIFY 3 · why: three modules with disjoint write-sets, each independently verified · est. about 0.9M tokens`
+How many agents depends on the task, never on the skill: below three independent write-sets, UltraCode is not worth it and one agent in one pass is faster; above that, roughly two per deliverable, the checker included.
 
 <p align="center"><img src="media/ultracode-discipline-story.png" width="360" alt="The same run drawn top to bottom: the Main Agent above, five owned agents, five verified badges, one correction, one proven result"></p>
 
@@ -140,17 +99,21 @@ The accepted version passed:
 - trigger validation in fresh Claude Code sessions: it loads for an UltraCode task and for a "use a workflow" fan-out, and stays quiet for a typo fix, a single lookup agent and plain conversation;
 - Claude-only isolation checks: an install in Claude's skills folder is not mirrored into other agents' skill folders;
 - a behavioral run on a throwaway project: one launch line, every return in the schema, a deliberately wrong brief surfaced as `blocked` rather than improvised, a narrow appended correction with the unchanged work replayed from cache instead of re-run, one final real test run, and no agent writing outside its write-set;
+- trigger validation on Linux (2026-09-25): loads first for an `ultracode` prompt and for a session with ultracode on; stays quiet for a typo fix;
 - an independent review with no material findings remaining open.
-- trigger validation on Linux (2026-09-25): loads first for an `ultracode` prompt, for a "use a workflow" ask and for a session with ultracode on; stays quiet for a typo fix.
+
+Version 2 (2026-10-09) narrowed the trigger to UltraCode only, dropped the verifier on read-only deliverables and the loaded line, and deferred everything the built-in reference already states. Re-validated the same day in fresh headless sessions on macOS (Claude Code 2.1.295): loads first for an `ultracode` prompt; stays quiet for a "use a workflow" ask, a typo fix and a three-agent lookup without the word. A behavioral run on a throwaway project (three modules, three builders, three independent checkers with a differential oracle, one final `npm test`, 20/20) found the gaps that became 2.1: the launch line was skipped, the schema had no field for a checker's failures, builders wrote prose reports instead of returning the schema, and a refused Workflow dialog was re-run through direct agents. All four are now rules. Re-tested headless, where the dialog is always refused: the refusal stopped the fan-out, the work was done inline and the refusal was disclosed; `findings` and the return-only-the-schema line appeared in every brief. The launch line as a chat line was skipped twice, so 2.1 binds it to the workflow's own description, which the approval dialog always shows.
 
 Validated on macOS and Linux (Ubuntu, Claude Code 2.1.282) with Claude Code. Not validated on Windows.
+
+The full 2.1 test record — every session, prompt, result and what was not tested — is in [`TEST-EVIDENCE.md`](TEST-EVIDENCE.md).
 
 ---
 
 ## What it costs
 
-- **Every fan-out gets a shape.** Scouting, contracts and complete briefs come before the first agent, so a run starts a little later and ends with proof.
-- **Verification is extra agents.** Every deliverable is checked by an agent that did not build it.
+- **Every fan-out gets a shape.** Contracts and complete briefs come before the first agent, so a run starts a little later and ends with proof.
+- **Verification is extra agents.** Every write deliverable is checked by an agent that did not build it; readers are not.
 - **The leader stays in the loop.** Several small workflows with the leader reading results between them, not one fire-and-forget run.
 
 **Worth it when:** a task really splits into parts that different agents can own.
@@ -161,7 +124,7 @@ Validated on macOS and Linux (Ubuntu, Claude Code 2.1.282) with Claude Code. Not
 
 ## The shortest version
 
-> Scout once. Give every agent one deliverable, one write-set, one definition of done. Fix the contracts first. Take nothing without evidence. Have a different agent check it. Correct narrowly. Prove it once, for real.
+> Give every agent one deliverable, one write-set, one definition of done. Fix the contracts first. Take nothing without evidence. Have a different agent check every write deliverable; read-only deliverables get no verifier. Correct narrowly. Prove it once, for real.
 
 ## Reminder: update every machine
 
@@ -173,7 +136,7 @@ npx skills add workspace-labs/ultracode-discipline -g
 
 If the skill is linked from a clone, run `git pull` in that clone instead. Then open a fresh Claude Code session; skills are indexed at session start.
 
-Quick check that the installed copy is current: start a session with an `ultracode` prompt. The first line Claude prints should be `ultracode-discipline: loaded · trigger: keyword`. No line means the old copy is still installed.
+Quick check that the installed copy is current: start a session with an `ultracode` prompt. The Workflow approval dialog's description should start with `UltraCode:`; an `ultracode-discipline: loaded` line, or an `est.` cost figure, means the old copy is still installed.
 
 ---
 
