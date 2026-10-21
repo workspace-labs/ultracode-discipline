@@ -1,6 +1,6 @@
 ---
 name: ultracode-discipline
-description: "How Claude leads an UltraCode run. Load when a system reminder says ultracode is on or the prompt contains the word ultracode, before workflow-authoring. Not for an ordinary Agent spawn, a parallel read-only lookup, a Workflow the user asked for without ultracode, a conversational turn, a trivial edit, or a board stage move. Claude Code only."
+description: "How Claude leads an UltraCode run. Load it first — before any file is read or written and before workflow-authoring — when a system reminder says ultracode is on or the prompt contains the word ultracode. Not for an ordinary Agent spawn, a parallel read-only lookup, a Workflow the user asked for without ultracode, a conversational turn, a trivial edit, or a board stage move. Claude Code only."
 ---
 
 # ultracode-discipline
@@ -12,9 +12,14 @@ never restate it. This file adds only what the reference does not say.
 ## Six rules
 1. **One agent = one deliverable + one write-set.** Writers never overlap; readers may.
    Two agents on one deliverable only for a stated comparison (judge panel).
-   A task with one write-set gets no fan-out: say so (rule 6) and do it yourself.
+   Count write-sets from the decomposition, never from the size of the change: parts that can
+   be built without reading each other's output are separate write-sets, however few lines
+   each one is. Three or more → fan out; that is what the human typed `ultracode` for, and
+   "it would cost more than it saves" is never a reason to stay inline. Fewer than three →
+   say so (rule 6) and do it yourself.
 2. **Contracts before fan-out.** The leader fixes interfaces, names and shapes first.
-   No subagent changes one; a subagent that finds one wrong returns `blocked`.
+   No subagent changes one; a subagent that finds one wrong returns `blocked`. The leader's own
+   edits to anything the agents read land before the fan-out or after the run, never during it.
 3. **Checker ≠ doer.** Every *write* deliverable gets a verifier that did not build it and sees
    the claim plus the code. Read-only deliverables get none. For audits use the reference's
    adversarial-verify pattern instead of one checker.
@@ -28,7 +33,8 @@ never restate it. This file adds only what the reference does not say.
    line — the approval dialog shows it to the human before anything runs — and reads exactly:
    `UltraCode: <n> agents · <phases> · why: <the decomposition>`
    A fan-out through direct Agent calls writes that same line as text before the first call;
-   one write-set gets `UltraCode: 0 agents · one write-set — inline` as text and no fan-out.
+   fewer than three write-sets get `UltraCode: 0 agents · <n> write-set(s) — inline` as text
+   and no fan-out.
    A refused Workflow call is
    the human declining that fan-out: never re-run the same agents through the Agent tool or a
    smaller script — ask, or do the work inline and say the fan-out was declined.
@@ -52,7 +58,7 @@ status: "done" | "blocked" | "unresolved"           required
 deliverable: string                                  required
 files_changed: string[]                              required — [] for a checker
 evidence: [{ command, output_excerpt }]              required — [] only when blocked
-findings: string[]                                   a checker's failed claims: file:line — what — what the contract requires
+findings: string[]                                   checker only — its failed claims: file:line — what — what the contract requires
 blocked_reason: string
 observations_out_of_scope: string[]
 ```
