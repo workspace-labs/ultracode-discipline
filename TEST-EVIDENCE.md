@@ -12,7 +12,8 @@ Two things changed in the harness since 2.1. A headless session can now **run** 
 | Trigger tests, tools limited to `Skill` | 5 + 4 re-runs on the final text | 9 / 9 as specified |
 | Approval probes | 2 | a headless Workflow runs under `--allowedTools Workflow` or `bypassPermissions` |
 | Behavioral runs, 2.1 skill | 4 | the keyword path stayed inline 2 / 2 on the README's own example — the defect |
-| Behavioral runs, fixed skill | 5 | 2 / 2 keyword runs fanned out; the switch-on path 2 / 2 after the second fix |
+| Behavioral runs, 2.2-rc1 | 2 | both fanned out, but engine-2 changed shared input during the run and t5c built inline before loading the skill |
+| Behavioral runs, final 2.2 text | 3 | engine-3, t5d and t5e loaded first and used three builders plus three checkers, 3 / 3 |
 
 Plan-equivalent cost of the whole exam: about $73.
 
@@ -46,7 +47,7 @@ Throwaway project: a 22-line CommonJS library (`parse`, `validate`, `write`, one
 
 Times are wall-clock for the whole session; the engine runs are short because the six agents ran in parallel.
 
-What the journals show for every fan-out run: one builder per module with a disjoint write-set (module + its test), one checker per module that did not build it, the contract block identical in every brief, the return schema passed as the agent's `schema` so no subagent could answer in prose, at most two correction rounds authored in the script, and the leader running `npm test` once at the end. No checker ever failed, so the correction path and a `blocked` return were authored every time but never exercised.
+For the conforming module-building fan-outs (`t5b`, `engine-3`, `t5d`, `t5e`), the reported journals show one builder per module with a disjoint write-set (module + its test), one checker per module that did not build it, the contract block identical in every brief, the return schema passed as the agent's `schema` so no subagent could answer in prose, at most two correction rounds authored in the script, and the leader running `npm test` once at the end. This aggregate excludes the two intermediate runs: `engine-2` changed shared input during the run, and `t5c` launched only four read-only checkers after building inline. No checker ever failed, so the correction path and a `blocked` return were authored but never exercised.
 
 ## What changed in 2.2
 
@@ -65,6 +66,18 @@ What the journals show for every fan-out run: one builder per module with a disj
 - A correction round or a `blocked` return in a live run — no checker ever failed and no brief was wrong, so those paths were authored but never exercised.
 - An **interactive** approval by a human; every approval here was the pre-approved headless kind.
 - Windows. Linux was validated for v1 on 2026-09-25, not re-run.
+
+## Codex review corrections (2026-10-21)
+
+Reviewed Git commit `5db3d5efda315cd5371e542149c15323040b84da`; the original skill file's SHA-256 was `8bf66724379cfa9a085bcf99ec9ecf83b561225eebd259782a0e3c265c65398d`. The live runs above are Claude-reported evidence for that text and its predecessors; Codex did not re-run them or inspect their raw journals in this review.
+
+Three findings were corrected:
+
+1. The write-set cutoff now applies to writing tasks. A read-only audit with several independent deliverables can use the reference's audit pattern instead of being forced inline by its zero write-sets.
+2. Independent agent verification now explicitly applies to delegated writes in a fan-out. Writing tasks with fewer than three write-sets, and inline work after a declined fan-out, retain the leader's final real test/build without claiming independent verification.
+3. The counts distinguish the three final-version passes from the two intermediate runs with problems; the builder/checker aggregate excludes the check-only `t5c` run.
+
+Verification of these corrections uses skill-structure validation, the read-only skill auditor, and an independent scenario review covering read-only audits, two-write-set inline work, three-write-set fan-out and a declined fan-out. This is static instruction validation, not a new live Claude/Workflow result.
 
 ---
 

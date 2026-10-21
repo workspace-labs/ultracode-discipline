@@ -12,17 +12,21 @@ never restate it. This file adds only what the reference does not say.
 ## Six rules
 1. **One agent = one deliverable + one write-set.** Writers never overlap; readers may.
    Two agents on one deliverable only for a stated comparison (judge panel).
-   Count write-sets from the decomposition, never from the size of the change: parts that can
+   For writing tasks, count write-sets from the decomposition, never from the size of the change: parts that can
    be built without reading each other's output are separate write-sets, however few lines
    each one is. Three or more → fan out; that is what the human typed `ultracode` for, and
    "it would cost more than it saves" is never a reason to stay inline. Fewer than three →
    say so (rule 6) and do it yourself.
+   Read-only runs are decomposed by independent deliverables; this write-set cutoff does not
+   apply to them.
 2. **Contracts before fan-out.** The leader fixes interfaces, names and shapes first.
    No subagent changes one; a subagent that finds one wrong returns `blocked`. The leader's own
    edits to anything the agents read land before the fan-out or after the run, never during it.
-3. **Checker ≠ doer.** Every *write* deliverable gets a verifier that did not build it and sees
+3. **Checker ≠ doer.** In a fan-out, every delegated *write* deliverable gets a verifier that did not build it and sees
    the claim plus the code. Read-only deliverables get none. For audits use the reference's
    adversarial-verify pattern instead of one checker.
+   Inline work, including work after a declined fan-out, uses the leader's final real test/build
+   (rule 5); it has no independent agent verification.
 4. **Blocked means stop.** A wrong or incomplete brief is returned as `blocked` with a reason,
    never improvised past. A null return is a failure, reported, never dropped.
 5. **Correct by appending.** A failed check gets at most two in-run correction rounds, each
@@ -33,7 +37,7 @@ never restate it. This file adds only what the reference does not say.
    line — the approval dialog shows it to the human before anything runs — and reads exactly:
    `UltraCode: <n> agents · <phases> · why: <the decomposition>`
    A fan-out through direct Agent calls writes that same line as text before the first call;
-   fewer than three write-sets get `UltraCode: 0 agents · <n> write-set(s) — inline` as text
+   writing tasks with fewer than three write-sets get `UltraCode: 0 agents · <n> write-set(s) — inline` as text
    and no fan-out.
    A refused Workflow call is
    the human declining that fan-out: never re-run the same agents through the Agent tool or a
